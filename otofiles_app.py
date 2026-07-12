@@ -259,12 +259,3 @@ else:
             st.markdown("---")
 ```
 eof
-
-### O que fazer para corrigir no seu GitHub:
-
-1. Vá até o seu repositório no **GitHub** e clique em editar o arquivo (seja ele `app.py` ou `otofiles_app.py`, use o que você configurou).
-2. **Apague todo o código que está lá atualmente**.
-3. Copie o bloco acima e cole-o no arquivo. (Atenção: comece copiando da linha `import streamlit as st` até o final do arquivo, sem as tags pretas de formatação).
-4. Salve as alterações clicando em **"Commit changes"**.
-
-Em menos de um minuto, o seu aplicativo online estará no ar e sem erros de sintaxe! Se precisar de qualquer outra alteração, estou aqui.
