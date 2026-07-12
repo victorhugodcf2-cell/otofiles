@@ -153,7 +153,7 @@ if 'paciente_atual' not in st.session_state:
                     }
                     st.session_state.pacientes.append(novo_paciente)
                     
-                    # Abre o perfil do novo paciente de forma imediata!
+                    # Abre o perfil do novo paciente de forma imediata
                     st.session_state.paciente_atual = novo_paciente
                     st.success(f"Paciente {novo_nome} cadastrado! Abrindo o perfil...")
                     time.sleep(1) # Pequena pausa para o usuário ler a mensagem de sucesso
@@ -260,7 +260,11 @@ else:
 ```
 eof
 
-### O que fazer agora?
-Basta copiar o conteúdo completo desta nova versão do arquivo `app.py`, colá-lo no seu repositório do **GitHub** (substituindo o código anterior) e salvar (fazer o *Commit changes*). 
+### O que fazer para corrigir no seu GitHub:
 
-O seu link do Streamlit irá atualizar automaticamente com todas essas correções em menos de um minuto! Se surgir qualquer outro ajuste, estou à disposição.
+1. Vá até o seu repositório no **GitHub** e clique em editar o arquivo (seja ele `app.py` ou `otofiles_app.py`, use o que você configurou).
+2. **Apague todo o código que está lá atualmente**.
+3. Copie o bloco acima e cole-o no arquivo. (Atenção: comece copiando da linha `import streamlit as st` até o final do arquivo, sem as tags pretas de formatação).
+4. Salve as alterações clicando em **"Commit changes"**.
+
+Em menos de um minuto, o seu aplicativo online estará no ar e sem erros de sintaxe! Se precisar de qualquer outra alteração, estou aqui.
