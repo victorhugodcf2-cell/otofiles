@@ -1,4 +1,3 @@
-
 import streamlit as st
 import datetime
 import time
@@ -49,7 +48,6 @@ st.markdown("""
 
 # Inicialização do banco de dados temporário (st.session_state)
 if 'pacientes' not in st.session_state:
-    # Adicionamos um campo 'ultimo_acesso' para controlar a ordenação dos últimos vistos
     st.session_state.pacientes = [
         {"id": "102938", "nome": "João Silva", "ultimo_acesso": 1.0},
         {"id": "456789", "nome": "Maria Oliveira", "ultimo_acesso": 2.0}
@@ -257,5 +255,3 @@ else:
                         st.markdown("**🔵 Orelha Esquerda (OE)**")
                         st.video(v['url'])
             st.markdown("---")
-```
-eof
