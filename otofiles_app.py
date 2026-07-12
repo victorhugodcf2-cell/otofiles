@@ -1,5 +1,7 @@
-import streamlit as st
+
+   import streamlit as st
 import datetime
+import time
 
 # Configuração inicial da página para mobile e desktop
 st.set_page_config(
@@ -9,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Estilização em CSS para deixar a interface limpa e profissional para ambiente clínico
+# Estilização em CSS para deixar a interface limpa, moderna e amigável para celular/tablet
 st.markdown("""
     <style>
     .main { 
@@ -20,6 +22,12 @@ st.markdown("""
         background-color: #0b57d0; 
         color: white; 
         border-radius: 8px;
+        border: none;
+        padding: 8px 16px;
+    }
+    .stButton>button:hover {
+        background-color: #0842a0;
+        color: white;
     }
     .patient-card { 
         padding: 16px; 
@@ -27,17 +35,24 @@ st.markdown("""
         background-color: white; 
         border-left: 5px solid #0b57d0; 
         margin-bottom: 12px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .delete-btn>button {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+    .delete-btn>button:hover {
+        background-color: #bb2d3b !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Simulamos um banco de dados temporário na memória do navegador (st.session_state)
-# futuramente ele será conectado a um banco de dados real (como o Supabase)
+# Inicialização do banco de dados temporário (st.session_state)
 if 'pacientes' not in st.session_state:
+    # Adicionamos um campo 'ultimo_acesso' para controlar a ordenação dos últimos vistos
     st.session_state.pacientes = [
-        {"id": "102938", "nome": "João Silva"},
-        {"id": "456789", "nome": "Maria Oliveira"}
+        {"id": "102938", "nome": "João Silva", "ultimo_acesso": 1.0},
+        {"id": "456789", "nome": "Maria Oliveira", "ultimo_acesso": 2.0}
     ]
 
 if 'videos' not in st.session_state:
@@ -62,28 +77,46 @@ if 'videos' not in st.session_state:
         }
     ]
 
-# Título principal do aplicativo
+# Título do Sistema
 st.title("👂 OtoFiles")
 st.caption("Residência de Otorrinolaringologia — Arquivo Digital de Otoscopias")
 
-# Criação das abas de navegação da tela inicial
-tab_busca, tab_cadastro = st.tabs(["🔍 Buscar Paciente", "➕ Cadastrar Novo Paciente"])
-
-with tab_busca:
-    busca = st.text_input(
-        "Digite o Nome ou o Prontuário do paciente:", 
-        placeholder="Ex: João Silva ou 102938"
-    ).strip()
+# Se o usuário NÃO estiver visualizando o perfil de um paciente, mostra a tela inicial
+if 'paciente_atual' not in st.session_state:
     
-    if busca:
-        # Filtragem em tempo real por nome ou número do prontuário
-        resultados = [
-            p for p in st.session_state.pacientes 
-            if busca.lower() in p['nome'].lower() or busca in p['id']
-        ]
+    # Criação das três abas de controle principal
+    tab_busca, tab_cadastro, tab_excluir = st.tabs([
+        "🔍 Buscar/Listar Pacientes", 
+        "➕ Cadastrar Novo Paciente", 
+        "❌ Excluir Paciente"
+    ])
+
+    with tab_busca:
+        # Barra de pesquisa
+        busca = st.text_input(
+            "Pesquisar paciente por Nome ou Prontuário:", 
+            placeholder="Digite algo para filtrar ou deixe em branco para ver todos..."
+        ).strip()
         
+        # Ordena a lista de pacientes colocando os últimos acessados/vistos primeiro
+        pacientes_ordenados = sorted(
+            st.session_state.pacientes, 
+            key=lambda x: x.get('ultimo_acesso', 0), 
+            reverse=True
+        )
+        
+        # Filtragem em tempo real
+        if busca:
+            resultados = [
+                p for p in pacientes_ordenados 
+                if busca.lower() in p['nome'].lower() or busca in p['id']
+            ]
+        else:
+            resultados = pacientes_ordenados
+
+        # Exibição da lista
         if resultados:
-            st.subheader(f"Resultados encontrados ({len(resultados)}):")
+            st.subheader("Pacientes Cadastrados (Últimos vistos primeiro):")
             for p in resultados:
                 col1, col2 = st.columns([4, 1])
                 with col1:
@@ -92,34 +125,74 @@ with tab_busca:
                         unsafe_allow_html=True
                     )
                 with col2:
-                    # Botão para abrir o perfil do paciente correspondente
-                    if st.button("Ver Perfil", key=f"btn_{p['id']}"):
+                    if st.button("Ver Perfil", key=f"ver_{p['id']}"):
+                        # Atualiza o timestamp de último acesso do paciente selecionado
+                        for pac in st.session_state.pacientes:
+                            if pac['id'] == p['id']:
+                                pac['ultimo_acesso'] = time.time()
                         st.session_state.paciente_atual = p
+                        st.rerun()
         else:
-            st.error("Nenhum paciente cadastrado com esses dados.")
+            st.info("Nenhum paciente cadastrado ou encontrado com este critério de busca.")
 
-with tab_cadastro:
-    st.subheader("Novo Registro de Paciente")
-    novo_nome = st.text_input("Nome Completo do Paciente", placeholder="Ex: Carlos Eduardo de Souza")
-    novo_id = st.text_input("Número do Prontuário / Registro Hospitalar", placeholder="Ex: 789123")
-    
-    if st.button("Salvar Paciente"):
-        if novo_nome and novo_id:
-            # Garante que o prontuário seja único no sistema
-            if any(p['id'] == novo_id for p in st.session_state.pacientes):
-                st.warning("Este número de prontuário já está cadastrado.")
+    with tab_cadastro:
+        st.subheader("Novo Registro de Paciente")
+        novo_nome = st.text_input("Nome Completo do Paciente", placeholder="Ex: Carlos Eduardo de Souza")
+        novo_id = st.text_input("Número do Prontuário / Registro Hospitalar", placeholder="Ex: 789123")
+        
+        if st.button("Salvar e Abrir Perfil"):
+            if novo_nome and novo_id:
+                # Garante que o prontuário seja único
+                if any(p['id'] == novo_id for p in st.session_state.pacientes):
+                    st.warning("Este número de prontuário já está cadastrado no sistema.")
+                else:
+                    novo_paciente = {
+                        "id": novo_id, 
+                        "nome": novo_nome, 
+                        "ultimo_acesso": time.time()
+                    }
+                    st.session_state.pacientes.append(novo_paciente)
+                    
+                    # Abre o perfil do novo paciente de forma imediata!
+                    st.session_state.paciente_atual = novo_paciente
+                    st.success(f"Paciente {novo_nome} cadastrado! Abrindo o perfil...")
+                    time.sleep(1) # Pequena pausa para o usuário ler a mensagem de sucesso
+                    st.rerun()
             else:
-                st.session_state.pacientes.append({"id": novo_id, "nome": novo_nome})
-                st.success(f"Paciente {novo_nome} cadastrado com sucesso!")
-        else:
-            st.error("Por favor, preencha todos os campos obrigatórios.")
+                st.error("Por favor, preencha o Nome e o Prontuário para poder salvar.")
 
-# Se o usuário clicou para ver o perfil de um paciente, renderizamos a tela dele
-if 'paciente_atual' in st.session_state:
+    with tab_excluir:
+        st.subheader("Remover Paciente do Sistema")
+        st.warning("Atenção: A exclusão de um paciente removerá também todo o histórico de otoscopias dele.")
+        
+        if not st.session_state.pacientes:
+            st.write("Nenhum paciente cadastrado no momento.")
+        else:
+            # Lista suspensa com todos os pacientes para selecionar quem excluir
+            opcoes_exclusao = {f"{p['nome']} (Prontuário: {p['id']})": p['id'] for p in st.session_state.pacientes}
+            paciente_para_excluir_label = st.selectbox("Selecione o paciente que deseja excluir:", list(opcoes_exclusao.keys()))
+            id_para_excluir = opcoes_exclusao[paciente_para_excluir_label]
+            
+            # Botão destacado em vermelho (usando classe CSS personalizada)
+            st.markdown("<div class='delete-btn'>", unsafe_allow_html=True)
+            confirmado = st.button("Confirmar Exclusão Definitiva", key="btn_confirmar_exclusao")
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            if confirmado:
+                # Remove o paciente da lista
+                st.session_state.pacientes = [p for p in st.session_state.pacientes if p['id'] != id_para_excluir]
+                # Remove os vídeos vinculados a este paciente
+                st.session_state.videos = [v for v in st.session_state.videos if v['paciente_id'] != id_para_excluir]
+                
+                st.success("Paciente e vídeos removidos com sucesso!")
+                time.sleep(1)
+                st.rerun()
+
+# --- TELA DE PERFIL DO PACIENTE SELECIONADO ---
+else:
     p = st.session_state.paciente_atual
-    st.write("---")
     
-    col_back, col_title = st.columns([1, 5])
+    col_back, col_space = st.columns([1, 5])
     with col_back:
         if st.button("⬅️ Voltar"):
             del st.session_state.paciente_atual
@@ -129,7 +202,7 @@ if 'paciente_atual' in st.session_state:
     st.info(f"**Número de Registro/Prontuário:** {p['id']}")
     
     # Seção colapsável de Upload de Novos Vídeos
-    with st.expander("🎥 Fazer Upload de Nova Otoscopia", expanded=False):
+    with st.expander("🎥 Fazer Upload de Nova Otoscopia", expanded=True):
         col_data, col_lado = st.columns(2)
         with col_data:
             data_exame = st.date_input("Data do Exame", datetime.date.today())
@@ -143,18 +216,18 @@ if 'paciente_atual' in st.session_state:
         
         if st.button("🚀 Salvar Exame"):
             if video_file is not None:
-                # Na versão final conectada à nuvem, esse arquivo será enviado ao Storage do Supabase
-                # Para o protótipo, simulamos adicionando à lista com um vídeo de exemplo padrão
+                # Para o protótipo, adicionamos à lista simulando o upload
                 st.session_state.videos.append({
                     "paciente_id": p['id'],
                     "data": str(data_exame),
                     "lado": lado_exame,
-                    "url": "https://www.w3schools.com/html/mov_bbb.mp4"
+                    "url": "https://www.w3schools.com/html/mov_bbb.mp4" # Vídeo modelo temporário
                 })
                 st.success("Vídeo de otoscopia salvo com sucesso!")
+                time.sleep(1)
                 st.rerun()
             else:
-                st.error("Selecione um arquivo de vídeo antes de salvar.")
+                st.error("Selecione um arquivo de vídeo antes de clicar em salvar.")
 
     # Exibição do histórico organizado por data e lateralidade
     st.subheader("📁 Histórico de Otoscopias")
@@ -162,7 +235,7 @@ if 'paciente_atual' in st.session_state:
     videos_paciente = [v for v in st.session_state.videos if v['paciente_id'] == p['id']]
     
     if not videos_paciente:
-        st.write("Nenhum registro de vídeo anexado a este paciente.")
+        st.write("Nenhum registro de vídeo anexado a este paciente ainda.")
     else:
         # Agrupa os exames pelas datas existentes, mostrando os mais recentes primeiro
         datas = sorted(list(set([v['data'] for v in videos_paciente])), reverse=True)
@@ -184,3 +257,5 @@ if 'paciente_atual' in st.session_state:
                         st.markdown("**🔵 Orelha Esquerda (OE)**")
                         st.video(v['url'])
             st.markdown("---")
+```
+eof
