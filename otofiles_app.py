@@ -1,5 +1,5 @@
 
-   import streamlit as st
+import streamlit as st
 import datetime
 import time
 
@@ -259,3 +259,8 @@ else:
             st.markdown("---")
 ```
 eof
+
+### O que fazer agora?
+Basta copiar o conteúdo completo desta nova versão do arquivo `app.py`, colá-lo no seu repositório do **GitHub** (substituindo o código anterior) e salvar (fazer o *Commit changes*). 
+
+O seu link do Streamlit irá atualizar automaticamente com todas essas correções em menos de um minuto! Se surgir qualquer outro ajuste, estou à disposição.
